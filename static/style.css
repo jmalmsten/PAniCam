@@ -1,4 +1,462 @@
-body {
-    background:     #000;
-    color:          #080;
+/* PAniCam Module:  style.css
+   Description:     Stylings for the whole GUI
+*/
+
+/* =====================================================================
+ * DSEG14 Classic - seven-fourteen-segment display font
+ * Used by the frame counter to give "#### / ####" readouts a real 
+ * LED-panel look because it carries a true '/' and '-' glyph, so 
+ * the whole string, * digits, slash, and the empty-state dashes,
+ * renders in-segment with no monospace fallback for the separator.
+ *
+ * Font: DSEG by keshikan, SIL Open Font License 1.1. The license
+ * text ships alongside the woff2 files in static/fonts/. Self-hosted
+ * (no CDN) to keep PAniCam offline-capable and FOSS-clean. url() is
+ * relative to this stylesheet, so 'fonts/..' = static/fonts/..,
+ * which Flask's static route already serves.
+ * 
+ * Italic face is used here (the classic forward-leaning LED slant) but
+ * register the regular face to, so anything that renders the family
+ * upright still gets segments rather than a sans-serif fallback.
+ * ===================================================================== */
+
+ @font-face {
+    font-family:    'DSEG14';
+    src:            url('fonts/DSEG14Classic-Regular.woff2') format('woff2');
+    font-weight:    normal;
+    font-style:     normal;
+    font-display:   swap;
+ }
+
+ @font-face {
+    font-family:    'DSEG14';
+    src:            url('fonts/DSEG14Classic-Italic.woff2') format('woff2');
+    font-weight:    normal;
+    font-style:     italic;
+    font-display:   swap;
+ }
+
+ /*
+#
+###########################################################################
+#
+#                                PAniCam
+#                       Copyright (C) 2026  jmalmsten
+#
+#     This program is free software: you can redistribute it and/or modify 
+#     it under the terms of the GNU Affero General Public License as 
+#     published by the Free Software Foundation, either version 3 of the 
+#     License, or (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful, but 
+#     WITHOUT ANY WARRANTY; without even the implied warranty of 
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+#     Affero General Public License for more details.
+#
+#     You should have received a copy of the GNU Affero General Public 
+#     License along with this program.  If not, see 
+#     <http://www.gnu.org/licenses/>.
+#
+#     Source code for this application can be found at 
+#     https://github.com/jmalmsten/PAniCam
+#
+########################################################################### */
+
+
+
+
+
+
+/* ############### Global variables ############# */
+
+:root{
+
+    /* >>> Global Brand & Accent Colors <<< */
+    --color-accent:         #0ad;       /* Used for text, borders, buttons, and button highlights */
+    --color-danger:         #500;       /* Panic Buttons */
+    --color-danger-text:    #f44;       /* Nuke Buttons */
+    --color-warning:        #fa0;       /* Nuke Confirmation */
+    --color-readout:        #fa0;       /* 7/14-seg gate frame counters (amber). */
+    --color-expose:         #080;       /* Expose-button background */
+    --color-panic:          #800;       /* Hardware Panic Button */
+
+    --color-online:         #0f0;       /* Sync indicator: Pi web server reachable */
+    --color-offline:        #f44;       /* Sync indicator: polling is failing */
+    --color-asleep:         #fc0;       /* Sync indicator: Pi is reachable but asleep */
+
+    /* >>> Background & Panels <<< */
+
+    --bg-body:              #070707;                /* Background for the whole GUI */
+    --bg-panel:             #1a1a1a;                /* Panels, monitor-A and monitor-B, status */
+    --bg-group:             #151515;                /* Group Boxes */
+    --bg-group-glass:       rgba(10, 10, 10, 0.6);  /* translucent group-box fill */
+    --group-blur:           1.5px;                    /* how much the board texture frosts behind a box */
+    --bg-input:             #000;                   /* Inputs, progress bar track */
+    --bg-button-muted:      #222;                   /* Nuke buttons, upload-btn, live_cam */
+    --bg-input-field:         #0d0d0d;                /* Input field background - slightly darker */
+
+    --logo-w:   256px; /* Logo display size */
+    --logo-h:   128px;
+
+    /* Monitor Panel's height. */
+    --monitor-h:    50vh;
+
+    /* Inset bevel shared by both cheeks (lit from top-left). Stored as a
+       token so each cheek can append its own outer shadow below. */
+    --cheek-bevel:
+        inset  2px  2px 3px rgba(255, 235, 220, 0.22),
+        inset -3px -3px 4px rgba(0, 0, 0, 0.55);
+
+
+
+
+
+
+    /* >>> Text Colors <<< */
+
+    --text-primary:     #ddd;       /* Body text */
+    --text-secondary:   #888;       /* Labels, group titles */
+    --text-muted:       #666;       
+    --text-dark:        #000;       /* Text on bright buttons */
+    
+    /*  >>> Borders <<< */
+
+    --border-color:     #333;
+    --border-mid:       #444;       /* Slightly brighter borders on muted buttons */
+    --radius-standard:  #4px;         /* For most boxes and panels */
+    --radius-small:     #3px;         /* For buttons
+    
+    /* >>> Wood frame <<< */
+    /* Solid "wood block" cheeks that flank the active page, evoking old
+       electronics: a central black board (dark UI) framed by solid
+       wood en-pieces. These are placeholders only. */
+    --wood-color:       #8a1c0a;    /* Dark red mahogany placeholder fill */
+    --wood-width:       60px;         /* width of each side cheek */
+    --wood-gap:         20px;         /* breathing space between wood + board */
+
+    /* Total horizontal space the frame removes (both cheeks + both gaps).
+       Anything that was sized off 100vw must subtract from this so it stays
+       inside the cheeks instead of running under them. */
+    --wood-frame-total: calc(2 * (var(--wood-width) + var(--wood-gap)));
 }
+
+/* ############### Custom Instant Tooltips ############### */
+/* Targets the data-title attribute directly so any element can carry one. 
+ * Used heavily by the exposure sheet headers. */
+[data-title] {
+    position:   relative;
+    cursor:     help;
+}
+
+/* The invisible tooltip box itself */
+[data-title]::after{
+    content:        attr(data-title);
+    position:       absolute;
+    bottom:         120%;
+    left:           50%;
+    transform:      translateX(-50%) translateY(5px);
+
+    background:     var(--bg-group, #151515);
+    color:          var(--color-accent, #0cf);
+    padding:        6px 10px;
+    border:         1px solid var(--border-color, #333);
+    border-radius:  var(--radius-small, 3px);
+
+    font-size:      0.85em;
+    font-weight:    bold;
+    font-family:    sans-serif;
+    white-space:    nowrap;
+
+    /* Make it invisible by default */
+    opacity:        0;
+    visibility:     hidden;
+    z-index:        9999;
+    pointer-events: none;
+    box-shadow:     0px 4px 12px rgba(0,0,0,0.8);
+
+    /* Smooth fade and slide animation */
+    transition:     opacity 0.2 ease, transform 0.2 ease, visibility 0.2s;
+}
+
+/* Trigger the animation on hover */
+[data-title]:hover::after {
+    opacity:        1;
+    visibility:     visible;
+    transform:      translateX(-50%) translateY(0);
+}
+
+/* Drag-and-drop hover state for upload target fields.
+   Toggled by setupDropZone() in main.js on dragover/dragleave/drop.
+   Uses --color-accent so it tracks the rest of the UI's accent borders */
+.drag-hover {
+    border: 2px dashed var(--color-accent) !important;
+}
+
+/* ############### Universal Button Polish ############### */
+/* Applied to every button class in the UI for consistent feel. */
+.action-btn, .nuke-btn, .panic-btn, .upload-btn, .mini-btn {
+    transition:         filter 0.2s ease, transform 0.1s ease;
+}
+
+/* Make them 30% brighter when the mouse touches them */
+.action-btn:hover, .nuke-btn:hover, .panic-btn:hover, .upload-btn:hover, .mini-btn:hover {
+    filter:             brightness(1.3);
+}
+
+/* Give them a tiny "click" depression effect when pressed */
+.action-btn:active, .nuke-btn:active, .panic-btn:active, .upload-btn:active, .mini-btn:active {
+    transform:          scale(0.96);
+}
+
+
+
+
+body {
+    background:     var(--bg-body);
+    color:          var(--text-primary);
+    font-family:    sans-serif;
+    margin:         0;
+    padding:        20px;
+}
+
+.container {
+    max-width:              100%;       /* Fill the viewport */
+    margin:                 0;          /* No auto-centering */
+    display:                grid;
+    grid-template-columns:  1fr min(1000px, 100%) 1fr;
+    gap:                    20px;
+}
+
+.GUI-header {
+    grid-column:            1 / -1;
+    display:                flex;
+    justify-content:        space-between;
+    align-items:            center;
+    border-bottom:          1px solid var(--border-color);
+}
+
+/* Sync indicator (top-right of the header). The poll loop in main.js
+   swaps .sync-online / .sync-offline on this element every tick; the
+   color is driven from here. */
+#sync_indicator.sync-online {
+    color: var(--color-online);
+}
+#sync_indicator.sync-offline {
+    color: var(--color-offline);
+}
+#sync_indicator.sync-asleep {
+    color: var(--color-asleep);
+}
+
+/* ===========================================================
+ * Page navigation (calibration page introduction)
+ * 
+ * Buttons in the GUI header switch between Main and
+ * Calibaration pages. The buttons toggle .page-active between
+ * the two top-level page divs (#page_main and #page_calibration).
+ * Pages without .page-active are hidden via display:none.
+ * 
+ * Future pages (Config, Help, etc.) follow same pattern: 
+ * add a button, a top-level div with .page-section, and a
+ * showPage() case.
+ * =========================================================== */
+
+.page-nav {
+    display: flex;
+    gap: 0.5em;
+}
+
+.page-nav-btn {
+    /* Default appearance: dim, indicating "not active". */
+    background:     #2a2a2a;
+    color:          #888;
+    border:         1px solid #444;
+    padding:        0.4em 1em;
+    cursor:         pointer;
+    font-family:    inherit;
+    font-size:      0.95em
+}
+
+.page-nav-btn:hover {
+    color:          #ccc;
+    border-color:   #666;
+}
+
+.page-nav-btn.active {
+    /* Active page's button stands out so the user always knows
+     * which page they're on. */
+    background:     #1a4a1a;
+    color:          #cfc;
+    border-color:   #4a8a4a;    
+}
+
+/* Page section default: hidden. Only the one with .page-active
+ * is shown. */
+.page-section {
+    display:    none;
+}
+
+/* Fullscreen button for making DIV's full screen. Will be very handy
+ * on multi-screen devices.
+ */
+.fullscreen-btn {
+    position:   absolute;
+    top:        10px;
+    right:      10px;
+    z-index:    10;
+    opacity:    0.7;
+}
+
+.fullscreen-btn:hover {
+    opacity: 1.0;
+}
+
+.monitor-A-area .fullscreen-btn{
+    position:   absolute;
+    top:        10px;
+    right:      10px;
+    opacity:    0.7;
+}
+
+.monitor-B-area .fullscreen-btn{
+    position:   absolute;
+    top:        10px;
+    right:      10px;
+    opacity:    0.7;
+}
+
+/* Decorative Logo, "printed" onto the board texture in the top-left.
+   Absolute, so it sits outside the grid and shifts no panels. mix-blend-mode
+   screen drops the PNG's black onto the texture (only the white linework
+   shows); opacity is the print-strength dial. The control-deck indent and
+   monitor row drop below open a clear patch of texture for it to land on. */
+.logo-graphic {
+    position:                   absolute;
+    top:                        var(--wood-gap);            /* aligns with content top */
+    left:                       calc(var(--wood-width) + var(--wood-gap)); /* Just right of left cheek */
+    width:                      var(--logo-w);
+    height:                     var(--logo-h);
+
+    background-image:           url("static/VOP-graphic.png");
+    background-size:            contain;
+    background-repeat:          no-repeat;
+
+    mix-blend-mode:             screen;     /* black vanishes into texture, white prints. */
+    opacity:                    0.75;       /* 75% print strength */
+    pointer-events:             none;       /* purely decorative - never intercept clicks */
+}
+
+/* ---- WOOD FRAME - left/right cheeks ---- */
+.page-section.page-active::before,
+.page-section.page-active::after {
+    content:    "";
+    position:   absolute;
+    top:        0;
+    bottom:     0;
+    width:      var(--wood-width);
+
+    background-image:
+        linear-gradient(var(--wood-color), var(--wood-color)),
+        url("/static/cheeks.jpg");
+    background-blend-mode: multiply;
+
+    background-repeat:  no-repeat, repeat-y;
+    background-size:    cover, calc(var(--wood-width) * 2) auto;
+
+    border-radius:      6px;
+    /* Bevel + per-side outer shadow are set on each cheek below so the
+       outer shadow can be thrown inward toward the board. */
+}
+
+.page-section.page-active::before {
+    left:                   0;
+    background-position:    center, left top;
+    /* Inset bevel, then an outer shadow thrown RIGHT onto the board so the
+       cheek reads as standing proud of a recessed main section. */
+    box-shadow:
+        var(--cheek-bevel),
+        8px 0 14px -3px rgba(0, 0, 0, 0.55);
+}
+
+.page-section.page-active::after{
+    right:                  0;
+    background-position:    center, right top;
+    /* Same, thrown LEFT onto the board. */
+    box-shadow:
+        var(--cheek-bevel),
+        -8px 0 14px -3px rgba(0,0,0,0.55);
+}
+
+/* ===========================================================
+ * Calibration page styling 
+ *
+ * The Calibration page reuses .group-box, .const-group,
+ * .input-row, .c-box, .action-btn, .mini-btn, and .section-divider
+ * from the Main page's existing styling so it visually belongs
+ * to the same family. The .cal-* classes below cover the
+ * page-specific layout and the new colour-coded brightness
+ * readout.
+ *
+ * The colour-coded readout uses .ok / .warn / .danger / .info
+ * modifier classes that slice 7's JS sets dynamically based on
+ * measured brightness. The colours match the meaning we agreed
+ * during planning: green = sensible high but not clipped,
+ * yellow = one or more channels are clipping, red = full clip,
+ * blue = should probably be higher.
+ * =========================================================== */
+
+/* Position the preview area on the Calibration page in the left
+ * column. Same column as Main's preview, same visual treatment. */
+.cal-preview-area {
+    grid-column:    1;
+    justify-self:   stretch; /* Fill the column width */
+    align-self:     stretch; /* Stretch to match the height of the control stack */
+
+    /* Width fix - The Main preview's flex item is a bare <img>
+     * whose intrinsic width drives .preview-area's width:auto. Here the flex
+     * item is .cal-preview-stack - a <div> with width:100% and NO intrinsic
+     * width - so width:100% is circular against the auto-width parent, the
+     * flex container has nothing to size against, and it collapses to its
+     * inherited min-width (300px) while height:50vh stays put. 
+     *
+     * Pinning an explicit width gives the panel a definite landscape size.
+     * 70vh equals .preview-area's own max-width cap, so the box is 70vh x
+     * 50vh (1.4:1) - the exact panel a full-frame camera image (>=1.4:1,
+     * e.g. the 3:2 sensor) lands on via Main's max-width clamp. The stack's
+     * two object-fit:contain images then letterbox inside it, just like
+     * #probe_img does on Main. No conflict with the inherited rule:
+     * .preview-area sets max-width but never width, so this slots in clean
+     * regardless of source order. */
+    width:          100%;
+    max-width:      none;
+    height:         100%;
+}
+
+/* Control stack. Sits in column 2 of the page grid */
+.cal-controls-area {
+    grid-column:    2;
+}
+
+/* Framing/focus Preivew stack. */
+.cal-preview-stack {
+    position:       relative;
+    width:          100%;
+    height:         100%;
+}
+
+/* Both images fill the stack and letterbox via object-fit:contain,
+ * matching #probe_img's behaviour on the Main page. */
+.cal-preview-stack img {
+    position:       absolute;
+    top:            0;
+    left:           0;
+    width:          100%;
+    height:         100%;
+    object-fit:     contain;
+}
+
+/* Default: still capture visible, live feed hidden. */
+#cal_feed_img {
+    display:        none;
+}
+
